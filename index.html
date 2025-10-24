@@ -181,6 +181,14 @@
             text-align: center;
         }
 
+        .mobile-field {
+            display: contents;
+        }
+
+        .mobile-label {
+            display: none;
+        }
+
         .summary-section {
             background: #f8f9fa;
             padding: 20px;
@@ -366,9 +374,22 @@
                 position: relative;
             }
 
+            .mobile-field {
+                display: block;
+                margin-bottom: 10px;
+            }
+
+            .mobile-label {
+                display: block;
+                font-weight: 600;
+                color: #667eea;
+                font-size: 13px;
+                margin-bottom: 5px;
+            }
+
             .item-row input {
                 width: 100%;
-                margin-bottom: 5px;
+                margin-bottom: 0;
             }
 
             .item-row input::placeholder {
@@ -557,10 +578,22 @@
                     </div>
                     <div id="items-container">
                         <div class="item-row" data-item="0">
-                            <input type="text" class="item-description" placeholder="Item description" required>
-                            <input type="number" class="item-rate" step="0.01" placeholder="0.00" required>
-                            <input type="number" class="item-quantity" value="1" min="1" required>
-                            <input type="number" class="item-amount" step="0.01" readonly>
+                            <div class="mobile-field">
+                                <label class="mobile-label">Description</label>
+                                <input type="text" class="item-description" placeholder="Item description" required>
+                            </div>
+                            <div class="mobile-field">
+                                <label class="mobile-label">Rate (₹)</label>
+                                <input type="number" class="item-rate" step="0.01" placeholder="0.00" required>
+                            </div>
+                            <div class="mobile-field">
+                                <label class="mobile-label">Quantity</label>
+                                <input type="number" class="item-quantity" value="1" min="1" required>
+                            </div>
+                            <div class="mobile-field">
+                                <label class="mobile-label">Amount (₹)</label>
+                                <input type="number" class="item-amount" step="0.01" readonly>
+                            </div>
                             <button type="button" class="btn btn-remove" onclick="removeItem(0)">✕</button>
                         </div>
                     </div>
@@ -679,10 +712,22 @@
             newItem.className = 'item-row';
             newItem.setAttribute('data-item', itemCounter);
             newItem.innerHTML = `
-                <input type="text" class="item-description" placeholder="Item description" required>
-                <input type="number" class="item-rate" step="0.01" placeholder="0.00" required>
-                <input type="number" class="item-quantity" value="1" min="1" required>
-                <input type="number" class="item-amount" step="0.01" readonly>
+                <div class="mobile-field">
+                    <label class="mobile-label">Description</label>
+                    <input type="text" class="item-description" placeholder="Item description" required>
+                </div>
+                <div class="mobile-field">
+                    <label class="mobile-label">Rate (₹)</label>
+                    <input type="number" class="item-rate" step="0.01" placeholder="0.00" required>
+                </div>
+                <div class="mobile-field">
+                    <label class="mobile-label">Quantity</label>
+                    <input type="number" class="item-quantity" value="1" min="1" required>
+                </div>
+                <div class="mobile-field">
+                    <label class="mobile-label">Amount (₹)</label>
+                    <input type="number" class="item-amount" step="0.01" readonly>
+                </div>
                 <button type="button" class="btn btn-remove" onclick="removeItem(${itemCounter})">✕</button>
             `;
             container.appendChild(newItem);
