@@ -895,6 +895,7 @@ assembly                    </div>
         });
 
       // Download as PDF
+// Download as PDF (FIXED: Always 1 page, fits A4 perfectly)
 async function downloadPDF() {
     const preview = document.getElementById('invoice-preview');
     const downloadBtn = document.getElementById('downloadBtn');
@@ -908,56 +909,56 @@ async function downloadPDF() {
     downloadBtn.textContent = 'Generating PDF...';
 
     try {
-        // Temporarily remove fixed height & allow full expansion
+        // 1. Temporarily force preview to fit A4
         const originalStyle = preview.style.cssText;
         preview.style.height = 'auto';
         preview.style.maxHeight = 'none';
         preview.style.overflow = 'visible';
+        preview.style.padding = '20mm';
+        preview.style.boxSizing = 'border-box';
+        preview.style.width = '210mm';  // A4 width
+        preview.style.maxWidth = '210mm';
 
         // Force reflow
         preview.offsetHeight;
 
-        // Use higher scale on mobile for clarity
-        const scale = window.innerWidth <= 768 ? 3 : 2;
-
+        // 2. Capture with high quality
         const canvas = await html2canvas(preview, {
-            scale: scale,
+            scale: 2,
             useCORS: true,
-            logging: false,
             backgroundColor: '#ffffff',
-            width: preview.scrollWidth,
-            height: preview.scrollHeight,
-            windowWidth: preview.scrollWidth,
-            windowHeight: preview.scrollHeight
+            width: preview.offsetWidth,
+            height: preview.offsetHeight,
+            scrollX: 0,
+            scrollY: 0
         });
 
-        // Restore original styles
+        // 3. Restore original style
         preview.style.cssText = originalStyle;
 
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF({
-            orientation: 'portrait',
-            unit: 'mm',
-            format: 'A4'
-        });
+        // 4. Create PDF - FORCE SINGLE PAGE
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
 
-        const imgWidth = 210;
-        const pageHeight = 297;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        let heightLeft = imgHeight;
-        let position = 0;
+        // Scale image to fit exactly in one A4 page
+        const imgWidth = canvas.width;
+        const imgHeight = canvas.height;
+        const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+        const imgScaledWidth = imgWidth * ratio;
+        const imgScaledHeight = imgHeight * ratio;
 
-        // Add first page
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
+        // Center the image on the page
+        const x = (pdfWidth - imgScaledWidth) / 2;
+        const y = (pdfHeight - imgScaledHeight) / 2;
 
-        // Add new pages if content overflows
-        while (heightLeft > 0) {
-            position = heightLeft - imgHeight;
-            pdf.addPage();
-            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-            heightLeft -= pageHeight;
-        }
+        pdf.addImage(
+            canvas.toDataURL('image/png'),
+            'PNG',
+            x, y,
+            imgScaledWidth,
+            imgScaledHeight
+        );
 
         const invoiceNumber = document.getElementById('invoiceNumber').value;
         pdf.save(`invoice_${invoiceNumber}.pdf`);
