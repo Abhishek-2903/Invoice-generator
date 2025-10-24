@@ -398,13 +398,14 @@
 
             .btn-remove {
                 position: absolute;
-                top: 10px;
+                top: 320px;
                 right: 10px;
                 padding: 5px 10px;
             }
 
             .items-section {
                 padding: 15px;
+                margin-bottom: 20px; /* Extra space before preview */
             }
 
             .btn {
@@ -446,7 +447,7 @@
             /* Invoice Preview Mobile */
             #invoice-preview {
                 padding: 20px 15px;
-                margin: 10px;
+                margin: 30px 10px 10px 10px; /* Push preview down */
             }
 
             .invoice-header {
@@ -477,6 +478,21 @@
                 gap: 8px;
                 padding: 12px;
                 font-size: 14px;
+            }
+
+            /* FIX 1: Full-width description on mobile */
+            .detail-row > div:first-child {
+                grid-column: 1 / -1;
+                word-break: break-word;
+                white-space: normal;
+                margin-bottom: 8px;
+            }
+
+            .detail-row > div:nth-child(2),
+            .detail-row > div:nth-child(3),
+            .detail-row > div:nth-child(4) {
+                display: flex;
+                justify-content: space-between;
             }
 
             .detail-row > div {
@@ -530,7 +546,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>📄 Invoice Generator</h1>
+            <h1>Invoice Generator</h1>
             <p>Create professional invoices with multiple items</p>
         </div>
 
@@ -575,7 +591,7 @@
                         <div>Quantity</div>
                         <div>Amount (₹)</div>
                         <div></div>
-                    </div>
+assembly                    </div>
                     <div id="items-container">
                         <div class="item-row" data-item="0">
                             <div class="mobile-field">
@@ -594,7 +610,7 @@
                                 <label class="mobile-label">Amount (₹)</label>
                                 <input type="number" class="item-amount" step="0.01" readonly>
                             </div>
-                            <button type="button" class="btn btn-remove" onclick="removeItem(0)">✕</button>
+                            <button type="button" class="btn btn-remove" onclick="removeItem(0)">X</button>
                         </div>
                     </div>
                     <button type="button" class="btn btn-add" onclick="addItem()">+ Add Item</button>
@@ -728,7 +744,7 @@
                     <label class="mobile-label">Amount (₹)</label>
                     <input type="number" class="item-amount" step="0.01" readonly>
                 </div>
-                <button type="button" class="btn btn-remove" onclick="removeItem(${itemCounter})">✕</button>
+                <button type="button" class="btn btn-remove" onclick="removeItem(${itemCounter})">X</button>
             `;
             container.appendChild(newItem);
             itemCounter++;
