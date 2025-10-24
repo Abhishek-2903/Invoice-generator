@@ -398,7 +398,7 @@
 
             .btn-remove {
                 position: absolute;
-                top: 300px;
+                top: 305px;
                 right: 10px;
                 padding: 5px 10px;
             }
@@ -894,52 +894,83 @@ assembly                    </div>
             document.getElementById('invoice-preview').scrollIntoView({ behavior: 'smooth' });
         });
 
-        // Download as PDF
-        async function downloadPDF() {
-            const preview = document.getElementById('invoice-preview');
-            const downloadBtn = document.getElementById('downloadBtn');
-            
-            if (preview.style.display === 'none') {
-                alert('Please generate the invoice first!');
-                return;
-            }
+      // Download as PDF
+async function downloadPDF() {
+    const preview = document.getElementById('invoice-preview');
+    const downloadBtn = document.getElementById('downloadBtn');
+    
+    if (preview.style.display === 'none') {
+        alert('Please generate the invoice first!');
+        return;
+    }
 
-            downloadBtn.disabled = true;
-            downloadBtn.textContent = 'Generating PDF...';
+    downloadBtn.disabled = true;
+    downloadBtn.textContent = 'Generating PDF...';
 
-            try {
-                const canvas = await html2canvas(preview, {
-                    scale: 2,
-                    useCORS: true,
-                    logging: false,
-                    backgroundColor: '#ffffff'
-                });
+    try {
+        // Temporarily remove fixed height & allow full expansion
+        const originalStyle = preview.style.cssText;
+        preview.style.height = 'auto';
+        preview.style.maxHeight = 'none';
+        preview.style.overflow = 'visible';
 
-                const imgData = canvas.toDataURL('image/png');
-                const pdf = new jsPDF({
-                    orientation: 'portrait',
-                    unit: 'mm',
-                    format: 'a4'
-                });
+        // Force reflow
+        preview.offsetHeight;
 
-                const imgWidth = 210;
-                const pageHeight = 297;
-                const imgHeight = (canvas.height * imgWidth) / canvas.width;
-                
-                pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-                
-                const invoiceNumber = document.getElementById('invoiceNumber').value;
-                pdf.save(`invoice_${invoiceNumber}.pdf`);
+        // Use higher scale on mobile for clarity
+        const scale = window.innerWidth <= 768 ? 3 : 2;
 
-                downloadBtn.disabled = false;
-                downloadBtn.textContent = 'Download PDF';
-            } catch (error) {
-                console.error('Error generating PDF:', error);
-                alert('Error generating PDF. Please try again.');
-                downloadBtn.disabled = false;
-                downloadBtn.textContent = 'Download PDF';
-            }
+        const canvas = await html2canvas(preview, {
+            scale: scale,
+            useCORS: true,
+            logging: false,
+            backgroundColor: '#ffffff',
+            width: preview.scrollWidth,
+            height: preview.scrollHeight,
+            windowWidth: preview.scrollWidth,
+            windowHeight: preview.scrollHeight
+        });
+
+        // Restore original styles
+        preview.style.cssText = originalStyle;
+
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'A4'
+        });
+
+        const imgWidth = 210;
+        const pageHeight = 297;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        let heightLeft = imgHeight;
+        let position = 0;
+
+        // Add first page
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+
+        // Add new pages if content overflows
+        while (heightLeft > 0) {
+            position = heightLeft - imgHeight;
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
         }
+
+        const invoiceNumber = document.getElementById('invoiceNumber').value;
+        pdf.save(`invoice_${invoiceNumber}.pdf`);
+
+        downloadBtn.disabled = false;
+        downloadBtn.textContent = 'Download PDF';
+    } catch (error) {
+        console.error('Error generating PDF:', error);
+        alert('Error generating PDF. Please try again.');
+        downloadBtn.disabled = false;
+        downloadBtn.textContent = 'Download PDF';
+    }
+}
     </script>
 </body>
 </html>
