@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Invoice Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .form-section {
+            padding: 40px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .logo-upload {
+            border: 2px dashed #667eea;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .logo-upload:hover {
+            background-color: #f8f9fa;
+        }
+
+        .logo-preview {
+            max-width: 200px;
+            max-height: 100px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .items-section {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .items-header {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 60px;
+            gap: 10px;
+            margin-bottom: 15px;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .item-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 60px;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        .item-row input {
+            padding: 8px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-right: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-add {
+            background: #28a745;
+            padding: 10px 20px;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .btn-remove {
+            background: #dc3545;
+            padding: 8px 12px;
+            font-size: 12px;
+            border-radius: 5px;
+        }
+
+        .btn-secondary {
+            background: #28a745;
+        }
+
+        .btn-secondary:hover {
+            box-shadow: 0 10px 20px rgba(40, 167, 69, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .button-group {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .summary-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .summary-row.total {
+            font-size: 20px;
+            font-weight: 600;
+            color: #667eea;
+            padding-top: 10px;
+            border-top: 2px solid #667eea;
+        }
+
+        /* Invoice Preview Styles */
+        #invoice-preview {
+            display: none;
+            background: white;
+            padding: 40px;
+            max-width: 210mm;
+            margin: 20px auto;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        .invoice-header {
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .invoice-logo {
+            max-width: 150px;
+            max-height: 80px;
+        }
+
+        .invoice-title-section {
+            text-align: right;
+        }
+
+        .invoice-title {
+            font-size: 2.5em;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .invoice-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .info-block {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        .invoice-details {
+            margin: 30px 0;
+        }
+
+        .detail-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            margin-bottom: 10px;
+            border-radius: 8px;
+        }
+
+        .detail-header {
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+        }
+
+        .invoice-footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
+        }
+
+        .total-section {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .total-section.grand {
+            font-size: 1.4em;
+            font-weight: 600;
+            color: #667eea;
+            padding-top: 10px;
+            border-top: 2px solid #667eea;
+        }
+
+        .amount-words {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-style: italic;
+            color: #666;
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+            .form-section, .button-group, .header {
+                display: none;
+            }
+            #invoice-preview {
+                display: block;
+                box-shadow: none;
+                margin: 0;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .row, .items-header, .item-row {
+                grid-template-columns: 1fr;
+            }
+            .invoice-info {
+                grid-template-columns: 1fr;
+            }
+            .detail-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📄 Invoice Generator</h1>
+            <p>Create professional invoices with multiple items</p>
+        </div>
+
+        <div class="form-section">
+            <form id="invoice-form">
+                <div class="form-group">
+                    <label>Company Logo (Optional)</label>
+                    <div class="logo-upload" onclick="document.getElementById('logoInput').click()">
+                        <p>Click to upload logo</p>
+                        <input type="file" id="logoInput" accept="image/*" style="display: none;">
+                        <img id="logoPreview" class="logo-preview" alt="Logo Preview">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="form-group">
+                        <label for="userName">Customer Name *</label>
+                        <input type="text" id="userName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="invoiceNumber">Invoice Number *</label>
+                        <input type="text" id="invoiceNumber" required>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="form-group">
+                        <label for="panCard">PAN Card Number</label>
+                        <input type="text" id="panCard" placeholder="e.g., ABCDE1234F">
+                    </div>
+                    <div class="form-group">
+                        <label for="invoiceDate">Invoice Date *</label>
+                        <input type="date" id="invoiceDate" required>
+                    </div>
+                </div>
+
+                <div class="items-section">
+                    <h3 style="margin-bottom: 15px; color: #667eea;">Invoice Items</h3>
+                    <div class="items-header">
+                        <div>Description</div>
+                        <div>Rate (₹)</div>
+                        <div>Quantity</div>
+                        <div>Amount (₹)</div>
+                        <div></div>
+                    </div>
+                    <div id="items-container">
+                        <div class="item-row" data-item="0">
+                            <input type="text" class="item-description" placeholder="Item description" required>
+                            <input type="number" class="item-rate" step="0.01" placeholder="0.00" required>
+                            <input type="number" class="item-quantity" value="1" min="1" required>
+                            <input type="number" class="item-amount" step="0.01" readonly>
+                            <button type="button" class="btn btn-remove" onclick="removeItem(0)">✕</button>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-add" onclick="addItem()">+ Add Item</button>
+                </div>
+
+                <div class="summary-section">
+                    <div class="summary-row">
+                        <span>Subtotal:</span>
+                        <span>₹<span id="subtotal">0.00</span></span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Received Amount:</span>
+                        <span>₹<input type="number" id="receivedAmount" step="0.01" value="0" style="width: 150px; display: inline-block;"></span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>Pending Amount:</span>
+                        <span>₹<span id="pendingAmount">0.00</span></span>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button type="submit" class="btn">Generate Invoice</button>
+                    <button type="button" class="btn btn-secondary" id="downloadBtn" onclick="downloadPDF()" disabled>Download PDF</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="invoice-preview">
+        <div class="invoice-header">
+            <div>
+                <img id="previewLogo" class="invoice-logo" style="display: none;" alt="Company Logo">
+            </div>
+            <div class="invoice-title-section">
+                <div class="invoice-title">INVOICE</div>
+                <div style="color: #666;">Invoice #: <span id="preview-invoice-number"></span></div>
+                <div style="color: #666;">Date: <span id="preview-date"></span></div>
+            </div>
+        </div>
+
+        <div class="invoice-info">
+            <div class="info-block">
+                <div class="info-label">Bill To:</div>
+                <div class="info-value" id="preview-customer-name"></div>
+                <div style="margin-top: 10px; color: #666;">
+                    PAN: <span id="preview-pan"></span>
+                </div>
+            </div>
+            <div class="info-block">
+                <div class="info-label">From:</div>
+                <div class="info-value">Krishna Tour and travels </div>
+                <div style="margin-top: 10px; color: #666;">
+                   
+                   7017900021
+                </div>
+            </div>
+        </div>
+
+        <div class="invoice-details">
+            <div class="detail-row detail-header">
+                <div>Description</div>
+                <div>Rate</div>
+                <div>Qty</div>
+                <div>Amount</div>
+            </div>
+            <div id="preview-items"></div>
+        </div>
+
+        <div class="invoice-footer">
+            <div class="total-section">
+                <span>Subtotal:</span>
+                <span>₹<span id="preview-subtotal"></span></span>
+            </div>
+            <div class="total-section">
+                <span>Received Amount:</span>
+                <span>₹<span id="preview-received"></span></span>
+            </div>
+            <div class="total-section grand">
+                <span>Pending Amount:</span>
+                <span>₹<span id="preview-pending"></span></span>
+            </div>
+            <div class="amount-words">
+                Amount in words: <span id="preview-words"></span>
+            </div>
+        </div>
+
+        <div style="margin-top: 50px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: center; color: #666;">
+            Thank you for your business!
+        </div>
+    </div>
+
+    <script>
+        const { jsPDF } = window.jspdf;
+        let itemCounter = 1;
+        let logoDataUrl = null;
+
+        // Logo upload handler
+        document.getElementById('logoInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    logoDataUrl = event.target.result;
+                    const preview = document.getElementById('logoPreview');
+                    preview.src = logoDataUrl;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Add new item
+        function addItem() {
+            const container = document.getElementById('items-container');
+            const newItem = document.createElement('div');
+            newItem.className = 'item-row';
+            newItem.setAttribute('data-item', itemCounter);
+            newItem.innerHTML = `
+                <input type="text" class="item-description" placeholder="Item description" required>
+                <input type="number" class="item-rate" step="0.01" placeholder="0.00" required>
+                <input type="number" class="item-quantity" value="1" min="1" required>
+                <input type="number" class="item-amount" step="0.01" readonly>
+                <button type="button" class="btn btn-remove" onclick="removeItem(${itemCounter})">✕</button>
+            `;
+            container.appendChild(newItem);
+            itemCounter++;
+            attachItemListeners();
+        }
+
+        // Remove item
+        function removeItem(id) {
+            const items = document.querySelectorAll('.item-row');
+            if (items.length > 1) {
+                const item = document.querySelector(`[data-item="${id}"]`);
+                item.remove();
+                calculateTotals();
+            } else {
+                alert('At least one item is required!');
+            }
+        }
+
+        // Calculate item amount
+        function calculateItemAmount(row) {
+            const rate = parseFloat(row.querySelector('.item-rate').value) || 0;
+            const quantity = parseFloat(row.querySelector('.item-quantity').value) || 0;
+            const amount = rate * quantity;
+            row.querySelector('.item-amount').value = amount.toFixed(2);
+            calculateTotals();
+        }
+
+        // Calculate totals
+        function calculateTotals() {
+            let subtotal = 0;
+            document.querySelectorAll('.item-row').forEach(row => {
+                const amount = parseFloat(row.querySelector('.item-amount').value) || 0;
+                subtotal += amount;
+            });
+            
+            document.getElementById('subtotal').textContent = subtotal.toFixed(2);
+            
+            const received = parseFloat(document.getElementById('receivedAmount').value) || 0;
+            const pending = subtotal - received;
+            document.getElementById('pendingAmount').textContent = pending.toFixed(2);
+        }
+
+        // Attach listeners to items
+        function attachItemListeners() {
+            document.querySelectorAll('.item-row').forEach(row => {
+                row.querySelector('.item-rate').addEventListener('input', () => calculateItemAmount(row));
+                row.querySelector('.item-quantity').addEventListener('input', () => calculateItemAmount(row));
+            });
+        }
+
+        // Convert number to words (Indian format)
+        function numberToWords(num) {
+            if (num === 0) return 'Zero';
+            
+            const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+            const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+            const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+            
+            function convertLessThanThousand(n) {
+                if (n === 0) return '';
+                if (n < 10) return ones[n];
+                if (n < 20) return teens[n - 10];
+                if (n < 100) return tens[Math.floor(n / 10)] + (n % 10 ? ' ' + ones[n % 10] : '');
+                return ones[Math.floor(n / 100)] + ' Hundred' + (n % 100 ? ' ' + convertLessThanThousand(n % 100) : '');
+            }
+            
+            const crore = Math.floor(num / 10000000);
+            const lakh = Math.floor((num % 10000000) / 100000);
+            const thousand = Math.floor((num % 100000) / 1000);
+            const remainder = num % 1000;
+            
+            let result = '';
+            if (crore) result += convertLessThanThousand(crore) + ' Crore ';
+            if (lakh) result += convertLessThanThousand(lakh) + ' Lakh ';
+            if (thousand) result += convertLessThanThousand(thousand) + ' Thousand ';
+            if (remainder) result += convertLessThanThousand(remainder);
+            
+            return result.trim();
+        }
+
+        // Initialize
+        document.getElementById('invoiceDate').valueAsDate = new Date();
+        attachItemListeners();
+        document.getElementById('receivedAmount').addEventListener('input', calculateTotals);
+
+        // Generate invoice preview
+        document.getElementById('invoice-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const userName = document.getElementById('userName').value;
+            const invoiceNumber = document.getElementById('invoiceNumber').value;
+            const panCard = document.getElementById('panCard').value || 'N/A';
+            const invoiceDate = document.getElementById('invoiceDate').value;
+            const subtotal = parseFloat(document.getElementById('subtotal').textContent);
+            const received = parseFloat(document.getElementById('receivedAmount').value) || 0;
+            const pending = subtotal - received;
+
+            // Set logo
+            const previewLogo = document.getElementById('previewLogo');
+            if (logoDataUrl) {
+                previewLogo.src = logoDataUrl;
+                previewLogo.style.display = 'block';
+            } else {
+                previewLogo.style.display = 'none';
+            }
+
+            // Set basic info
+            document.getElementById('preview-customer-name').textContent = userName;
+            document.getElementById('preview-invoice-number').textContent = invoiceNumber;
+            document.getElementById('preview-date').textContent = new Date(invoiceDate).toLocaleDateString();
+            document.getElementById('preview-pan').textContent = panCard;
+
+            // Set items
+            const previewItems = document.getElementById('preview-items');
+            previewItems.innerHTML = '';
+            document.querySelectorAll('.item-row').forEach(row => {
+                const desc = row.querySelector('.item-description').value;
+                const rate = parseFloat(row.querySelector('.item-rate').value);
+                const qty = parseFloat(row.querySelector('.item-quantity').value);
+                const amount = parseFloat(row.querySelector('.item-amount').value);
+                
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'detail-row';
+                itemDiv.innerHTML = `
+                    <div>${desc}</div>
+                    <div>₹${rate.toFixed(2)}</div>
+                    <div>${qty}</div>
+                    <div>₹${amount.toFixed(2)}</div>
+                `;
+                previewItems.appendChild(itemDiv);
+            });
+
+            // Set totals
+            document.getElementById('preview-subtotal').textContent = subtotal.toFixed(2);
+            document.getElementById('preview-received').textContent = received.toFixed(2);
+            document.getElementById('preview-pending').textContent = pending.toFixed(2);
+            
+            // Amount in words (for total subtotal)
+            const rupees = Math.floor(subtotal);
+            const paise = Math.round((subtotal - rupees) * 100);
+            let words = numberToWords(rupees) + ' Rupees';
+            if (paise > 0) words += ' and ' + numberToWords(paise) + ' Paise';
+            document.getElementById('preview-words').textContent = words + ' Only';
+
+            document.getElementById('invoice-preview').style.display = 'block';
+            document.getElementById('downloadBtn').disabled = false;
+            document.getElementById('invoice-preview').scrollIntoView({ behavior: 'smooth' });
+        });
+
+        // Download as PDF
+        async function downloadPDF() {
+            const preview = document.getElementById('invoice-preview');
+            const downloadBtn = document.getElementById('downloadBtn');
+            
+            if (preview.style.display === 'none') {
+                alert('Please generate the invoice first!');
+                return;
+            }
+
+            downloadBtn.disabled = true;
+            downloadBtn.textContent = 'Generating PDF...';
+
+            try {
+                const canvas = await html2canvas(preview, {
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    backgroundColor: '#ffffff'
+                });
+
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: 'a4'
+                });
+
+                const imgWidth = 210;
+                const pageHeight = 297;
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                
+                pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+                
+                const invoiceNumber = document.getElementById('invoiceNumber').value;
+                pdf.save(`invoice_${invoiceNumber}.pdf`);
+
+                downloadBtn.disabled = false;
+                downloadBtn.textContent = 'Download PDF';
+            } catch (error) {
+                console.error('Error generating PDF:', error);
+                alert('Error generating PDF. Please try again.');
+                downloadBtn.disabled = false;
+                downloadBtn.textContent = 'Download PDF';
+            }
+        }
+    </script>
+</body>
+</html>
